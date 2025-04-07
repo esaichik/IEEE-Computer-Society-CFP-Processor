@@ -79,6 +79,9 @@ METADATA = {
     "DB_RECORDS_ORDER": [DbFieldStatus.NEW, DbFieldStatus.UPDATED, DbFieldStatus.UNMODIFIED]
 }
 
+DEADLINE_FIELD_NAME = METADATA["DB_HEADER"][5]
+TYPE_FIELD_NAME = METADATA["DB_HEADER"][1]
+
 
 def get_ieee_cs_page() -> BeautifulSoup:
     page = get(METADATA["IEEE_CS_CFP_URL"], headers=METADATA["HEADERS"])
@@ -124,10 +127,9 @@ def create_composite_key(media_type: MediaType, name: str, title: str, summary: 
 
 
 def process_db_row_data(data: dict[str, Any]) -> dict[str, Any]:
-    header = METADATA["DB_HEADER"][1:]
-    data[header[0]] = DeserializeValueProcessor.MEDIA_TYPE(data[header[0]])
-    if data[header[4]]:
-        data[header[4]] = DeserializeValueProcessor.MEDIA_DEADLINE(data[header[4]])
+    data[TYPE_FIELD_NAME] = DeserializeValueProcessor.MEDIA_TYPE(data[TYPE_FIELD_NAME])
+    if data[DEADLINE_FIELD_NAME]:
+        data[DEADLINE_FIELD_NAME] = DeserializeValueProcessor.MEDIA_DEADLINE(data[DEADLINE_FIELD_NAME])
     return data
 
 
@@ -220,19 +222,24 @@ def update_db_info(values: dict[DbFieldStatus, list[dict[str, Any]]]) -> None:
         delimiter = METADATA["DB_FIELDS_DELIMITER"]
         db_record_status = METADATA["DB_RECORDS_ORDER"]
         container_metadata = METADATA["DATA_CONTAINER"]
+        media_name_field_name = field_names[2]
+        title_field_name = field_names[3]
         with open(db_file_location, "w", encoding=encoding) as csvfile:
             writer = DictWriter(csvfile, fieldnames=field_names, delimiter=delimiter)
             writer.writeheader()
             for record_status in db_record_status:
                 if values[record_status]:
-                    for value in values[record_status]:
-                        key = create_composite_key(value[field_names[1]], value[field_names[2]], value[field_names[3]])
-                        if value[field_names[5]]:
-                            value[field_names[5]] = value[field_names[5]].strftime(
+                    ordered_records = sorted(values[record_status], key=lambda record: (
+                        record[DEADLINE_FIELD_NAME] is None, record[DEADLINE_FIELD_NAME]))
+                    for cfp_record in ordered_records:
+                        key = create_composite_key(cfp_record[TYPE_FIELD_NAME], cfp_record[media_name_field_name],
+                                                   cfp_record[title_field_name])
+                        if cfp_record[DEADLINE_FIELD_NAME]:
+                            cfp_record[DEADLINE_FIELD_NAME] = cfp_record[DEADLINE_FIELD_NAME].strftime(
                                 container_metadata['MEDIA_DEADLINE_FORMAT'])
                         writer.writerow({
                             field_names[0]: key,
-                            **value,
+                            **cfp_record,
                         })
                     print(
                         f"Processed {len(values[record_status])} row{"s" if len(values[record_status]) > 1 else ""} with {record_status} status")
@@ -243,7 +250,9 @@ def update_db_info(values: dict[DbFieldStatus, list[dict[str, Any]]]) -> None:
 
 def print_deleted_information(values: dict[DbFieldStatus, list[dict[str, Any]]]) -> None:
     if values[DbFieldStatus.DELETED]:
-        pprint(f"Also deleted {len(values[DbFieldStatus.DELETED])} rows: {values[DbFieldStatus.DELETED]}")
+        print(f"Also deleted {len(values[DbFieldStatus.DELETED])} row{"" if len(values[DbFieldStatus.DELETED]) == 1 else "s"}:")
+        for row in values[DbFieldStatus.DELETED]:
+            pprint(row)
 
 
 def main() -> None:
