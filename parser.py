@@ -250,7 +250,8 @@ def update_db_info(values: dict[DbFieldStatus, list[dict[str, Any]]]) -> None:
 
 def print_deleted_information(values: dict[DbFieldStatus, list[dict[str, Any]]]) -> None:
     if values[DbFieldStatus.DELETED]:
-        print(f"Also deleted {len(values[DbFieldStatus.DELETED])} row{"" if len(values[DbFieldStatus.DELETED]) == 1 else "s"}:")
+        print(
+            f"Also deleted {len(values[DbFieldStatus.DELETED])} row{"" if len(values[DbFieldStatus.DELETED]) == 1 else "s"}:")
         for row in values[DbFieldStatus.DELETED]:
             pprint(row)
 
