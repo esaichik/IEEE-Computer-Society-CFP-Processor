@@ -74,7 +74,7 @@ METADATA = {
     "DB_HEADER": ["CompositeKey", "Type", "Name", "Title", "Summary", "Deadline", "TitleLink", "ActionsLink"],
     "DB_LOCATION": "",
     "DB_FILENAME": "cfp.db",
-    "DB_FIELDS_DELIMITER": ";",
+    "DB_FIELDS_DELIMITER": ",",
     "DB_ENCODING": "utf-8",
     "DB_RECORDS_ORDER": [DbFieldStatus.NEW, DbFieldStatus.UPDATED, DbFieldStatus.UNMODIFIED]
 }

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.js"></script>
+</head>
+
+<body>
+<table id="csvTable" class="display" style="width:100%">
+    <thead>
+    <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Title</th>
+        <th>Summary</th>
+        <th>Due Date</th>
+        <th>Link</th>
+    </tr>
+    </thead>
+    <tbody id="tableBody">
+    </tbody>
+</table>
+
+<script>
+    function parseAndPopulateCSV(csvData) {
+        Papa.parse(csvData, {
+            header: true,
+            dynamicTyping: true,
+            complete: function (results) {
+                const data = results.data;
+                const tableBody = document.getElementById('tableBody');
+                tableBody.innerHTML = '';
+
+                data.forEach(function (row) {
+                    if (row.Type) {
+                        let rowHtml = '<tr>';
+                        rowHtml += '<td>' + row.Type + '</td>';
+                        rowHtml += '<td>' + row.Name + '</td>';
+                        rowHtml += '<td>' + row.Title + '</td>';
+                        rowHtml += '<td>' + row.Summary + '</td>';
+                        rowHtml += '<td>' + row.Deadline + '</td>';
+                        rowHtml += '<td>' + '<a href="' + row.TitleLink + '">' + row.TitleLink + '</a>' + '</td>';
+                        rowHtml += '</tr>';
+                        tableBody.innerHTML += rowHtml;
+                    }
+                });
+
+                // Initialize DataTable
+                $('#csvTable').DataTable();
+            }
+        });
+    }
+
+</script>
+
+<input type="file" id="csvFileInput" accept=".db">
+<button onclick="loadCSVFile()">Load "cfp.db"</button>
+
+<script>
+    function loadCSVFile() {
+        const input = document.getElementById('csvFileInput');
+        const file = input.files[0];
+
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = event => parseAndPopulateCSV(event.target.result);
+            reader.readAsText(file);
+        }
+    }
+</script>
+</body>
+
+</html>

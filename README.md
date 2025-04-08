@@ -6,4 +6,4 @@ Scrapping URL: https://www.computer.org/publications/author-resources/calls-for-
 ### Output:
 File name: cfp.db
 
-File type: CSV, separator: ";"
+File type: CSV, separator: ","
