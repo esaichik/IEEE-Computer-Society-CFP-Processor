@@ -225,6 +225,8 @@ def update_db_info(values: dict[DbFieldStatus, list[dict[str, Any]]]) -> None:
         media_name_field_name = field_names[2]
         title_field_name = field_names[3]
         with open(db_file_location, "w", encoding=encoding) as csvfile:
+            # It works correctly.
+            # noinspection PyTypeChecker
             writer = DictWriter(csvfile, fieldnames=field_names, delimiter=delimiter)
             writer.writeheader()
             for record_status in db_record_status:
