@@ -28,23 +28,29 @@
         Papa.parse(csvData, {
             header: true,
             dynamicTyping: true,
+            skipEmptyLines: true,
+            transform: function(value, column) {
+                switch (column) {
+                    case "Deadline": return value ? value : 'Not specified';
+                    case "TitleLink": return '<a href="' + value + '">' + value + '</a>'
+                    default: return value;
+                }
+            },
             complete: function (results) {
                 const data = results.data;
                 const tableBody = document.getElementById('tableBody');
                 tableBody.innerHTML = '';
 
                 data.forEach(function (row) {
-                    if (row.Type) {
-                        let rowHtml = '<tr>';
-                        rowHtml += '<td>' + row.Type + '</td>';
-                        rowHtml += '<td>' + row.Name + '</td>';
-                        rowHtml += '<td>' + row.Title + '</td>';
-                        rowHtml += '<td>' + row.Summary + '</td>';
-                        rowHtml += '<td>' + row.Deadline + '</td>';
-                        rowHtml += '<td>' + '<a href="' + row.TitleLink + '">' + row.TitleLink + '</a>' + '</td>';
-                        rowHtml += '</tr>';
-                        tableBody.innerHTML += rowHtml;
-                    }
+                    let rowHtml = '<tr>';
+                    rowHtml += '<td>' + row.Type + '</td>';
+                    rowHtml += '<td>' + row.Name + '</td>';
+                    rowHtml += '<td>' + row.Title + '</td>';
+                    rowHtml += '<td>' + row.Summary + '</td>';
+                    rowHtml += '<td>' + row.Deadline + '</td>';
+                    rowHtml += '<td>' + row.TitleLink + '</td>';
+                    rowHtml += '</tr>';
+                    tableBody.innerHTML += rowHtml;
                 });
 
                 // Initialize DataTable
@@ -62,12 +68,7 @@
     function loadCSVFile() {
         const input = document.getElementById('csvFileInput');
         const file = input.files[0];
-
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = event => parseAndPopulateCSV(event.target.result);
-            reader.readAsText(file);
-        }
+        parseAndPopulateCSV(file)
     }
 </script>
 </body>
