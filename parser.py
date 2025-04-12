@@ -250,11 +250,12 @@ def update_db_info(values: dict[DbFieldStatus, list[dict[str, Any]]]) -> None:
         print(f"Exception during updating: {be}")
 
 
-def print_deleted_information(values: dict[DbFieldStatus, list[dict[str, Any]]]) -> None:
-    if values[DbFieldStatus.DELETED]:
-        print(
-            f"Also deleted {len(values[DbFieldStatus.DELETED])} row{"" if len(values[DbFieldStatus.DELETED]) == 1 else "s"}:")
-        for row in values[DbFieldStatus.DELETED]:
+def print_status_information(values_container: dict[DbFieldStatus, list[dict[str, Any]]], status: DbFieldStatus,
+                             prefix: str) -> None:
+    values = values_container[status]
+    if values:
+        print(f"{prefix} {len(values)} row{"" if len(values) == 1 else "s"}:")
+        for row in values:
             pprint(row)
 
 
@@ -267,7 +268,8 @@ def main() -> None:
             print(
                 f"There {"is" if len(value) == 1 else "are"} {len(value)} item{"" if len(value) == 1 else "s"} with {key} status")
     update_db_info(matching_results)
-    print_deleted_information(matching_results)
+    print_status_information(matching_results, DbFieldStatus.NEW, "Added")
+    print_status_information(matching_results, DbFieldStatus.DELETED, "Deleted")
 
 
 if __name__ == "__main__":
