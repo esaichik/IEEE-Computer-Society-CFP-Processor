@@ -51,6 +51,11 @@ class DeserializeValueProcessor(Enum):
     MEDIA_ACTIONS_LINK = lambda x: x
 
 
+TYPE_FIELD_NAME = "Type"
+NAME_FIELD_NAME = "Name"
+TITLE_FIELD_NAME = "Title"
+DEADLINE_FIELD_NAME = "Deadline"
+
 METADATA = {
     "IEEE_CS_CFP_URL": "https://www.computer.org/publications/author-resources/calls-for-papers",
     "HEADERS": {
@@ -72,18 +77,14 @@ METADATA = {
         "MEDIA_DEADLINE": "data-deadline",
         "MEDIA_DEADLINE_FORMAT": "%Y-%m-%d",
     },
-    "DB_HEADER": ["Type", "Name", "Title", "Summary", "Deadline", "TitleLink", "ActionsLink"],
+    "DB_HEADER": [TYPE_FIELD_NAME, NAME_FIELD_NAME, TITLE_FIELD_NAME, "Summary", DEADLINE_FIELD_NAME, "TitleLink",
+                  "ActionsLink"],
     "DB_LOCATION": "",
     "DB_FILENAME": "cfp.db",
     "DB_FIELDS_DELIMITER": ",",
     "DB_ENCODING": "utf-8",
     "DB_RECORDS_ORDER": [DbFieldStatus.NEW, DbFieldStatus.UPDATED, DbFieldStatus.UNMODIFIED]
 }
-
-TYPE_FIELD_NAME = METADATA["DB_HEADER"][0]
-NAME_FIELD_NAME = METADATA["DB_HEADER"][1]
-TITLE_FIELD_NAME = METADATA["DB_HEADER"][2]
-DEADLINE_FIELD_NAME = METADATA["DB_HEADER"][4]
 
 
 def get_ieee_cs_page() -> BeautifulSoup:
