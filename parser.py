@@ -11,7 +11,7 @@ from bs4 import BeautifulSoup, Tag
 from requests import get
 
 
-class DbFieldStatus(StrEnum):
+class DbRecordStatus(StrEnum):
     NEW = "NEW"
     UNMODIFIED = "UNMODIFIED"
     UPDATED = "UPDATED"
@@ -83,7 +83,7 @@ METADATA = {
     "DB_FILENAME": "cfp.db",
     "DB_FIELDS_DELIMITER": ",",
     "DB_ENCODING": "utf-8",
-    "DB_RECORDS_ORDER": [DbFieldStatus.NEW, DbFieldStatus.UPDATED, DbFieldStatus.UNMODIFIED]
+    "DB_RECORDS_ORDER": [DbRecordStatus.NEW, DbRecordStatus.UPDATED, DbRecordStatus.UNMODIFIED]
 }
 
 
@@ -170,21 +170,21 @@ def parse_ieee_cs_cfp_information(page_data: BeautifulSoup) -> dict[str, dict[st
         print(f"Exception during parsing: {be}")
 
 
-def match_ieee_cs_cfp_information_with_db(web_data: dict[str, dict[str, Any]]) -> dict[DbFieldStatus, list[dict[
+def match_ieee_cs_cfp_information_with_db(web_data: dict[str, dict[str, Any]]) -> dict[DbRecordStatus, list[dict[
     str, Any]] | None] | None:
     try:
         result = {
-            DbFieldStatus.NEW: None,
-            DbFieldStatus.UNMODIFIED: None,
-            DbFieldStatus.UPDATED: None,
-            DbFieldStatus.DELETED: None,
+            DbRecordStatus.NEW: None,
+            DbRecordStatus.UNMODIFIED: None,
+            DbRecordStatus.UPDATED: None,
+            DbRecordStatus.DELETED: None,
         }
         field_names = METADATA["DB_HEADER"]
         delimiter = METADATA["DB_FIELDS_DELIMITER"]
         db_file_location = path.join(METADATA["DB_LOCATION"], METADATA["DB_FILENAME"])
         encoding = METADATA["DB_ENCODING"]
         if not path.exists(db_file_location):
-            result[DbFieldStatus.NEW] = list(web_data.values())
+            result[DbRecordStatus.NEW] = list(web_data.values())
             return result
         else:
             db_data = {}
@@ -205,20 +205,28 @@ def match_ieee_cs_cfp_information_with_db(web_data: dict[str, dict[str, Any]]) -
             intersected_keys = db_keys & web_keys
             new_keys = web_keys - db_keys
             deleted_keys = db_keys - web_keys
-            result[DbFieldStatus.NEW] = [web_data[key] for key in new_keys]
-            result[DbFieldStatus.DELETED] = [db_data[key] for key in deleted_keys]
+            result[DbRecordStatus.NEW] = [web_data[key] for key in new_keys]
+            result[DbRecordStatus.DELETED] = [db_data[key] for key in deleted_keys]
             updated_keys = set()
             for key in intersected_keys:
                 if web_data[key] != db_data[key]:
                     updated_keys.add(key)
-            result[DbFieldStatus.UPDATED] = [web_data[key] for key in updated_keys]
-            result[DbFieldStatus.UNMODIFIED] = [db_data[key] for key in intersected_keys - updated_keys]
+            result[DbRecordStatus.UPDATED] = [web_data[key] for key in updated_keys]
+            result[DbRecordStatus.UNMODIFIED] = [db_data[key] for key in intersected_keys - updated_keys]
             return result
     except BaseException as be:
         print(f"Exception during matching: {be}")
 
 
-def update_db_info(values: dict[DbFieldStatus, list[dict[str, Any]]]) -> None:
+def only_unmodified_records(records: dict[DbRecordStatus, Any]) -> None:
+    return records[DbRecordStatus.UNMODIFIED] and not records[DbRecordStatus.UPDATED] and not records[
+        DbRecordStatus.DELETED] and not records[DbRecordStatus.NEW]
+
+
+def update_db_info(records: dict[DbRecordStatus, list[dict[str, Any]]]) -> None:
+    if only_unmodified_records(records):
+        print("Skipping DB file update as there are only unmodified records")
+        return
     try:
         db_file_location = path.join(METADATA["DB_LOCATION"], METADATA["DB_FILENAME"])
         encoding = METADATA["DB_ENCODING"]
@@ -232,8 +240,8 @@ def update_db_info(values: dict[DbFieldStatus, list[dict[str, Any]]]) -> None:
             writer = DictWriter(csvfile, fieldnames=field_names, delimiter=delimiter)
             writer.writeheader()
             for record_status in db_record_status:
-                if values[record_status]:
-                    ordered_records = sorted(values[record_status], key=lambda record: (
+                if records[record_status]:
+                    ordered_records = sorted(records[record_status], key=lambda record: (
                         record[DEADLINE_FIELD_NAME] is None, record[DEADLINE_FIELD_NAME]))
                     for cfp_record in ordered_records:
                         if cfp_record[DEADLINE_FIELD_NAME]:
@@ -241,13 +249,13 @@ def update_db_info(values: dict[DbFieldStatus, list[dict[str, Any]]]) -> None:
                                 container_metadata['MEDIA_DEADLINE_FORMAT'])
                         writer.writerow(cfp_record)
                     print(
-                        f"Processed {len(values[record_status])} row{"s" if len(values[record_status]) > 1 else ""} with {record_status} status")
+                        f"Processed {len(records[record_status])} row{"s" if len(records[record_status]) > 1 else ""} with {record_status} status")
 
     except BaseException as be:
         print(f"Exception during updating: {be}")
 
 
-def print_status_information(values_container: dict[DbFieldStatus, list[dict[str, Any]]], status: DbFieldStatus,
+def print_status_information(values_container: dict[DbRecordStatus, list[dict[str, Any]]], status: DbRecordStatus,
                              prefix: str) -> None:
     values = values_container[status]
     if values:
@@ -265,8 +273,8 @@ def main() -> None:
             print(
                 f"There {"is" if len(value) == 1 else "are"} {len(value)} item{"" if len(value) == 1 else "s"} with {key} status")
     update_db_info(matching_results)
-    print_status_information(matching_results, DbFieldStatus.NEW, "Added")
-    print_status_information(matching_results, DbFieldStatus.DELETED, "Deleted")
+    print_status_information(matching_results, DbRecordStatus.NEW, "Added")
+    print_status_information(matching_results, DbRecordStatus.DELETED, "Deleted")
 
 
 if __name__ == "__main__":
