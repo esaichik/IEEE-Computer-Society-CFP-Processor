@@ -1,9 +1,9 @@
-beautifulsoup4==4.13.3
-certifi==2025.1.31
-charset-normalizer==3.4.1
+beautifulsoup4==4.13.4
+certifi==2025.7.14
+charset-normalizer==3.4.2
 idna==3.10
-lxml==5.3.2
-requests==2.32.3
-soupsieve==2.6
-typing_extensions==4.13.2
-urllib3==2.4.0
+lxml==6.0.0
+requests==2.32.4
+soupsieve==2.7
+typing_extensions==4.14.1
+urllib3==2.5.0

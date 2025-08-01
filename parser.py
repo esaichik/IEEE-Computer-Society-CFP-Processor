@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 from csv import DictReader, DictWriter
 from datetime import datetime
 from enum import StrEnum, Enum
