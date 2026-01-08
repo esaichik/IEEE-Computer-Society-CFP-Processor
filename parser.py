@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 from csv import DictReader, DictWriter
 from datetime import datetime

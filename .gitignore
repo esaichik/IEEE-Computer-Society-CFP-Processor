@@ -1,4 +1,5 @@
 **/.DS_Store
+# venv-name
 /parser
 .idea/
 cfp.db
