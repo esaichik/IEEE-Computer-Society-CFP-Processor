@@ -69,14 +69,14 @@ METADATA = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Safari/605.1.15"
     },
     "DATA_CONTAINER": {
-        "CLASS_NAME": "callForPaperPostContainer",
-        "TITLE_CLASS_NAME": "callForPaperPostTitle",
-        "SUMMARY_CLASS_NAME": "callForPaperPostSummary",
-        "ACTION_CLASS_NAME": "callForPaperPostActions",
-        "MEDIA_TYPE": "data-callforpaper-type",
-        "MEDIA_NAME": "data-publication",
-        "MEDIA_DEADLINE": "data-deadline",
-        "MEDIA_DEADLINE_FORMAT": "%Y-%m-%d",
+        "CLASS_NAME": "cfp-card",
+        "TITLE_CLASS_NAME": None,
+        "SUMMARY_CLASS_NAME": "line-clamp-3",
+        "ACTION_CLASS_NAME": None,
+        "MEDIA_TYPE": None,
+        "MEDIA_NAME": None,
+        "MEDIA_DEADLINE": None,
+        "MEDIA_DEADLINE_FORMAT": None,
     },
     "DB_HEADER": [TYPE_FIELD_NAME, NAME_FIELD_NAME, TITLE_FIELD_NAME, "Summary", DEADLINE_FIELD_NAME, "TitleLink",
                   "ActionsLink"],
@@ -140,25 +140,39 @@ def process_db_row_data(data: dict[str, Any]) -> dict[str, Any]:
 def parse_ieee_cs_cfp_information(page_data: BeautifulSoup) -> dict[str, dict[str, str]] | None:
     result = {}
     try:
-        container_metadata = METADATA["DATA_CONTAINER"]
-        containers = page_data.find_all("div", class_=container_metadata["CLASS_NAME"])
+        containers = page_data.find_all("div", attrs={"aria-label": "Call For Paper Card"})
         for container in containers:
-            media_type = DeserializeValueProcessor.MEDIA_TYPE(
-                get_tag_attribute_or_default(container, container_metadata["MEDIA_TYPE"]))
-            name = DeserializeValueProcessor.MEDIA_NAME(
-                get_tag_attribute_or_default(container, container_metadata["MEDIA_NAME"]))
-            deadline = DeserializeValueProcessor.MEDIA_DEADLINE(
-                get_tag_attribute_or_default(container, container_metadata["MEDIA_DEADLINE"]))
-            title_link_element = container.find("div", class_=container_metadata["TITLE_CLASS_NAME"]).find("a")
+            type_name_p = container.find("p", class_="style-p-sm")
+            type_name_text = type_name_p.get_text(strip=True) if type_name_p else ""
+            split_idx = type_name_text.find("-")
+            if split_idx != -1:
+                media_type_str = type_name_text[:split_idx].strip()
+                name = type_name_text[split_idx + 1:].strip()
+            else:
+                media_type_str = ""
+                name = None
+            media_type = DeserializeValueProcessor.MEDIA_TYPE(media_type_str)
+            title_link_element = container.find("a")
             title_link = DeserializeValueProcessor.MEDIA_TITLE_LINK(
-                get_tag_attribute_or_default(title_link_element, "href"))
+                get_tag_attribute_or_default(title_link_element, "href")) if title_link_element else None
+            if title_link:
+                title_link = "https://www.computer.org" + title_link
             title_text = DeserializeValueProcessor.MEDIA_TITLE_TEXT(
                 title_link_element) if title_link_element else None
-            summary = DeserializeValueProcessor.MEDIA_SUMMARY(
-                container.find("div", class_=container_metadata["SUMMARY_CLASS_NAME"]).find("p"))
-            actions_link_element = container.find("div", class_=container_metadata["ACTION_CLASS_NAME"]).find("a")
-            actions_link = DeserializeValueProcessor.MEDIA_ACTIONS_LINK(
-                get_tag_attribute_or_default(actions_link_element, "href"))
+            summary_element = container.find("p", class_="line-clamp-3")
+            summary = DeserializeValueProcessor.MEDIA_SUMMARY(summary_element)
+            deadline_p = container.find("p", class_="text-slate-600")
+            deadline_text = deadline_p.get_text(strip=True) if deadline_p else ""
+            deadline_str = deadline_text.replace("Submissions Due:", "").strip() if deadline_text else None
+            deadline = None
+            if deadline_str:
+                for fmt in ("%d %B %Y", "%B %d, %Y", "%B %d %Y", "%d %b %Y"):
+                    try:
+                        deadline = datetime.strptime(deadline_str, fmt)
+                        break
+                    except ValueError:
+                        continue
+            actions_link = title_link
             if name is None:
                 name = DeserializeValueProcessor.MEDIA_NAME(try_extract_name_from_title(title_text))
             data = create_media_data_dict(media_type, name, title_text, summary, deadline,
@@ -246,8 +260,9 @@ def update_db_info(records: dict[DbRecordStatus, list[dict[str, Any]]]) -> None:
                         record[DEADLINE_FIELD_NAME] is None, record[DEADLINE_FIELD_NAME]))
                     for cfp_record in ordered_records:
                         if cfp_record[DEADLINE_FIELD_NAME]:
+                            deadline_format = container_metadata.get('MEDIA_DEADLINE_FORMAT') or "%Y-%m-%d"
                             cfp_record[DEADLINE_FIELD_NAME] = cfp_record[DEADLINE_FIELD_NAME].strftime(
-                                container_metadata['MEDIA_DEADLINE_FORMAT'])
+                                deadline_format)
                         writer.writerow(cfp_record)
                     print(
                         f"Processed {len(records[record_status])} row{"s" if len(records[record_status]) > 1 else ""} with {record_status} status")

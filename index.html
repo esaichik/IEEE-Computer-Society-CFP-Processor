@@ -24,6 +24,20 @@
 </table>
 
 <script>
+    jQuery.fn.dataTable.ext.type.order['date-with-null-asc'] = function(a, b) {
+        var x = (a === 'Not specified' || !a) ? 1 : 0;
+        var y = (b === 'Not specified' || !b) ? 1 : 0;
+        if (x !== y) return x - y;
+        return a.localeCompare(b);
+    };
+
+    jQuery.fn.dataTable.ext.type.order['date-with-null-desc'] = function(a, b) {
+        var x = (a === 'Not specified' || !a) ? 1 : 0;
+        var y = (b === 'Not specified' || !b) ? 1 : 0;
+        if (x !== y) return x - y;
+        return b.localeCompare(a);
+    };
+
     function parseAndPopulateCSV(csvData) {
         Papa.parse(csvData, {
             header: true,
@@ -54,7 +68,29 @@
                 });
 
                 // Initialize DataTable
-                $('#csvTable').DataTable();
+                $('#csvTable').DataTable({
+                    columnDefs: [
+                        {
+                            targets: 4, // Due Date column
+                            type: 'date-with-null',
+                            render: function(data, type, row) {
+                                if (type === 'display' && data && data !== 'Not specified') {
+                                    const parts = data.split('-');
+                                    if (parts.length === 3) {
+                                        const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                                            'July', 'August', 'September', 'October', 'November', 'December'];
+                                        const year = parts[0];
+                                        const month = months[parseInt(parts[1], 10) - 1];
+                                        const day = parseInt(parts[2], 10);
+                                        return day + ' ' + month + ' ' + year;
+                                    }
+                                }
+                                return data;
+                            }
+                        }
+                    ],
+                    order: [[4, 'asc']]
+                });
             }
         });
     }
