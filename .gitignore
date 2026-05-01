@@ -3,4 +3,5 @@
 /parser
 .idea/
 cfp.db
+/__pycache__/
 
