@@ -44,8 +44,8 @@ class DeserializeValueProcessor(Enum):
     MEDIA_TYPE = lambda x: MediaType.from_value(x) if x else MediaType.UNKNOWN
     MEDIA_NAME = lambda x: x
     MEDIA_TITLE = lambda x: x
-    MEDIA_DEADLINE = lambda x: datetime.strptime(x, METADATA["DATA_CONTAINER"]['MEDIA_DEADLINE_FORMAT']) \
-        if x and METADATA["DATA_CONTAINER"]['MEDIA_DEADLINE_FORMAT'] else None
+    MEDIA_DEADLINE = lambda x: datetime.strptime(
+        x, METADATA["DATA_CONTAINER"]['MEDIA_DEADLINE_FORMAT'] or DEFAULT_MEDIA_DEADLINE_FORMAT) if x else None
     MEDIA_TITLE_LINK = lambda x: x
     MEDIA_TITLE_TEXT = lambda x: x.text.strip() if x and x.text else None
     MEDIA_SUMMARY = lambda x: remove_non_printable_chars(x.text.strip()) if x and x.text else None
@@ -56,6 +56,7 @@ TYPE_FIELD_NAME = "Type"
 NAME_FIELD_NAME = "Name"
 TITLE_FIELD_NAME = "Title"
 DEADLINE_FIELD_NAME = "Deadline"
+DEFAULT_MEDIA_DEADLINE_FORMAT = "%Y-%m-%d"
 
 METADATA = {
     "IEEE_CS_CFP_URL": "https://www.computer.org/publications/author-resources/calls-for-papers",
@@ -260,7 +261,8 @@ def update_db_info(records: dict[DbRecordStatus, list[dict[str, Any]]]) -> None:
                         record[DEADLINE_FIELD_NAME] is None, record[DEADLINE_FIELD_NAME]))
                     for cfp_record in ordered_records:
                         if cfp_record[DEADLINE_FIELD_NAME]:
-                            deadline_format = container_metadata.get('MEDIA_DEADLINE_FORMAT') or "%Y-%m-%d"
+                            deadline_format = container_metadata.get(
+                                'MEDIA_DEADLINE_FORMAT') or DEFAULT_MEDIA_DEADLINE_FORMAT
                             cfp_record[DEADLINE_FIELD_NAME] = cfp_record[DEADLINE_FIELD_NAME].strftime(
                                 deadline_format)
                         writer.writerow(cfp_record)
