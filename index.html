@@ -3,7 +3,81 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
 <title>IEEE Computer Society — Calls for Papers</title>
+
+<!--
+  Theme bootstrap. Runs before the blocking CDN scripts and before the first paint, so the saved
+  palette is applied immediately (no flash of the wrong theme). The resolved theme lands on
+  <html data-theme="light|dark">, the user's choice on <html data-theme-pref="auto|light|dark">.
+-->
+<script>
+(function () {
+  'use strict';
+
+  var KEY = 'cfp-theme';
+  var root = document.documentElement;
+  var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+
+  function readPreference() {
+    try {
+      var saved = window.localStorage.getItem(KEY);
+      return (saved === 'light' || saved === 'dark' || saved === 'auto') ? saved : 'auto';
+    } catch (err) {
+      return 'auto'; // storage can be unavailable (private mode, some file:// setups)
+    }
+  }
+
+  function systemTheme() {
+    return (mq && mq.matches) ? 'dark' : 'light';
+  }
+
+  function resolveTheme(preference) {
+    return (preference === 'light' || preference === 'dark') ? preference : systemTheme();
+  }
+
+  function syncControls(preference) {
+    var radios = document.querySelectorAll('.theme-switch input[type="radio"]');
+    for (var i = 0; i < radios.length; i++) {
+      radios[i].checked = radios[i].value === preference;
+    }
+  }
+
+  function applyTheme(preference) {
+    if (preference !== 'light' && preference !== 'dark' && preference !== 'auto') preference = 'auto';
+    root.setAttribute('data-theme', resolveTheme(preference));
+    root.setAttribute('data-theme-pref', preference);
+    syncControls(preference);
+    try { window.localStorage.setItem(KEY, preference); } catch (err) { /* ignore */ }
+  }
+
+  // Paint with the right palette straight away.
+  var preference = readPreference();
+  root.setAttribute('data-theme', resolveTheme(preference));
+  root.setAttribute('data-theme-pref', preference);
+
+  // In "Auto" the page keeps following the OS while it is open.
+  if (mq) {
+    var onSystemChange = function () {
+      if (root.getAttribute('data-theme-pref') === 'auto') {
+        root.setAttribute('data-theme', systemTheme());
+      }
+    };
+    if (mq.addEventListener) mq.addEventListener('change', onSystemChange);
+    else if (mq.addListener) mq.addListener(onSystemChange);
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    syncControls(root.getAttribute('data-theme-pref'));
+
+    var group = document.querySelector('.theme-switch');
+    if (!group) return;
+    group.addEventListener('change', function (event) {
+      if (event.target && event.target.name === 'theme') applyTheme(event.target.value);
+    });
+  });
+})();
+</script>
 
 <!--
   Standalone page: no build step, no bundler, no transpilation.
@@ -17,6 +91,7 @@
 <style>
   /* ---------------------------------------------------------------- tokens */
   :root {
+    color-scheme: light;
     --bg-1: #eef2ff;
     --bg-2: #f7fafc;
     --surface: #ffffff;
@@ -32,6 +107,8 @@
     --ring: rgba(0, 98, 155, .25);
     --hover: #f2f6fb;
     --shadow: 0 20px 45px -30px rgba(15, 23, 42, .45);
+    --seg-active-bg: #ffffff;
+    --seg-active-shadow: 0 1px 2px rgba(15, 23, 42, .16);
     --pill-bg: #f1f5f9;
     --pill-fg: #475569;
     --pill-bd: #e2e8f0;
@@ -42,32 +119,35 @@
     --danger-bg: #fdecec; --danger-fg: #b3261e; --danger-bd: #f7d3d1;
   }
 
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg-1: #0a1120;
-      --bg-2: #0e1729;
-      --surface: #121c30;
-      --surface-2: #16223a;
-      --thead: #182541;
-      --text: #e9eefb;
-      --muted: #94a3bb;
-      --faint: #6b7c96;
-      --border: #23314c;
-      --border-strong: #334361;
-      --accent: #58b6e8;
-      --accent-soft: #10283d;
-      --ring: rgba(88, 182, 232, .3);
-      --hover: #1a2740;
-      --shadow: 0 24px 50px -32px rgba(0, 0, 0, .85);
-      --pill-bg: #1c2942;
-      --pill-fg: #b9c6dc;
-      --pill-bd: #2a3a58;
-      --ok-bg: #102c22;  --ok-fg: #6ee7b0;  --ok-bd: #1d4636;
-      --info-bg: #10203c; --info-fg: #8ab8ff; --info-bd: #1f3459;
-      --plum-bg: #211a3c; --plum-fg: #c4b5fd; --plum-bd: #362a5e;
-      --warn-bg: #2e2410; --warn-fg: #fbbf24; --warn-bd: #4a3a18;
-      --danger-bg: #33191a; --danger-fg: #fca5a5; --danger-bd: #542425;
-    }
+  /* Dark palette. `data-theme` is resolved by the bootstrap script in <head>: it holds the saved
+     choice, or the OS preference while the switch is on "Auto". */
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg-1: #0a1120;
+    --bg-2: #0e1729;
+    --surface: #121c30;
+    --surface-2: #16223a;
+    --thead: #182541;
+    --text: #e9eefb;
+    --muted: #94a3bb;
+    --faint: #6b7c96;
+    --border: #23314c;
+    --border-strong: #334361;
+    --accent: #58b6e8;
+    --accent-soft: #10283d;
+    --ring: rgba(88, 182, 232, .3);
+    --hover: #1a2740;
+    --shadow: 0 24px 50px -32px rgba(0, 0, 0, .85);
+    --seg-active-bg: #29395a;
+    --seg-active-shadow: 0 1px 2px rgba(0, 0, 0, .45);
+    --pill-bg: #1c2942;
+    --pill-fg: #b9c6dc;
+    --pill-bd: #2a3a58;
+    --ok-bg: #102c22;  --ok-fg: #6ee7b0;  --ok-bd: #1d4636;
+    --info-bg: #10203c; --info-fg: #8ab8ff; --info-bd: #1f3459;
+    --plum-bg: #211a3c; --plum-fg: #c4b5fd; --plum-bd: #362a5e;
+    --warn-bg: #2e2410; --warn-fg: #fbbf24; --warn-bd: #4a3a18;
+    --danger-bg: #33191a; --danger-fg: #fca5a5; --danger-bd: #542425;
   }
 
   /* ------------------------------------------------------------------ base */
@@ -153,6 +233,64 @@
     margin: 0;
   }
 
+  .hero__aside {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: .8rem;
+  }
+
+  /* ------------------------------------------------------------ theme switch */
+  .theme-switch {
+    display: inline-flex;
+    gap: .15rem;
+    margin: 0;
+    padding: .2rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: .7rem;
+  }
+
+  .theme-switch__option { position: relative; display: block; }
+
+  /* The real radio stays in the layout but invisible, so focus and arrow-key navigation work. */
+  .theme-switch__option input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .theme-switch__face {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .35rem .55rem;
+    font-size: .75rem;
+    font-weight: 600;
+    color: var(--muted);
+    border-radius: .5rem;
+    transition: background-color .12s ease, color .12s ease;
+  }
+
+  .theme-switch__option:hover .theme-switch__face { color: var(--text); }
+
+  .theme-switch__option input:checked + .theme-switch__face {
+    color: var(--text);
+    background: var(--seg-active-bg);
+    box-shadow: var(--seg-active-shadow);
+  }
+
+  .theme-switch__option input:focus-visible + .theme-switch__face {
+    outline: 3px solid var(--ring);
+    outline-offset: 1px;
+  }
+
+  .theme-switch__icon { width: 1rem; height: 1rem; flex: none; }
+
   .stat {
     min-width: 8.5rem;
     padding: .7rem .9rem;
@@ -234,12 +372,10 @@
     border-radius: .6rem;
   }
 
-  @media (prefers-color-scheme: dark) {
-    .dropzone__action { color: #04202f; }
+  [data-theme="dark"] .dropzone__action { color: #04202f; }
 
-    .checkbox input:checked {
-      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3.4 8.7l3.1 3.1 6.1-6.9' fill='none' stroke='%2304202f' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
-    }
+  [data-theme="dark"] .checkbox input:checked {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3.4 8.7l3.1 3.1 6.1-6.9' fill='none' stroke='%2304202f' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
   }
 
   /* ---------------------------------------------------------------- status */
@@ -258,6 +394,25 @@
   }
 
   .status[data-kind="error"] { border-left-color: var(--danger-fg); color: var(--danger-fg); }
+
+  /* Pending work gets a spinner instead of a trailing "…": the message often ends with a
+     <code> pill, and punctuation never sits well right after a padded box. */
+  .status[data-kind="busy"]::after {
+    content: '';
+    width: .85rem;
+    height: .85rem;
+    flex: none;
+    border: 2px solid var(--border-strong);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: status-spin .7s linear infinite;
+  }
+
+  @keyframes status-spin { to { transform: rotate(1turn); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .status[data-kind="busy"]::after { animation-duration: 1.6s; }
+  }
 
   /* ------------------------------------------------------------------ card */
   .card {
@@ -623,11 +778,51 @@
       </p>
     </div>
 
-    <dl class="stats">
-      <div class="stat"><dt>Entries</dt><dd id="statEntries">—</dd></div>
-      <div class="stat"><dt>Upcoming</dt><dd id="statUpcoming">—</dd></div>
-      <div class="stat"><dt>Source</dt><dd id="statSource" title="Loaded file">—</dd></div>
-    </dl>
+    <div class="hero__aside">
+      <fieldset class="theme-switch" id="themeSwitch">
+        <legend class="visually-hidden">Colour theme</legend>
+
+        <label class="theme-switch__option" title="Follow the system theme">
+          <input type="radio" name="theme" value="auto" checked>
+          <span class="theme-switch__face">
+            <svg class="theme-switch__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.7"/>
+              <path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor"/>
+            </svg>
+            Auto
+          </span>
+        </label>
+
+        <label class="theme-switch__option" title="Always use the light theme">
+          <input type="radio" name="theme" value="light">
+          <span class="theme-switch__face">
+            <svg class="theme-switch__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="4.2"/>
+              <path d="M12 2.6v2.3M12 19.1v2.3M4.5 4.5l1.6 1.6M17.9 17.9l1.6 1.6M2.6 12h2.3M19.1 12h2.3M4.5 19.5l1.6-1.6M17.9 6.1l1.6-1.6"/>
+            </svg>
+            Light
+          </span>
+        </label>
+
+        <label class="theme-switch__option" title="Always use the dark theme">
+          <input type="radio" name="theme" value="dark">
+          <span class="theme-switch__face">
+            <svg class="theme-switch__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.7" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20.4 14.6A8.6 8.6 0 0 1 9.4 3.6a8.6 8.6 0 1 0 11 11Z"/>
+            </svg>
+            Dark
+          </span>
+        </label>
+      </fieldset>
+
+      <dl class="stats">
+        <div class="stat"><dt>Entries</dt><dd id="statEntries">—</dd></div>
+        <div class="stat"><dt>Upcoming</dt><dd id="statUpcoming">—</dd></div>
+        <div class="stat"><dt>Source</dt><dd id="statSource" title="Loaded file">—</dd></div>
+      </dl>
+    </div>
   </header>
 
   <label class="dropzone" id="dropzone">
@@ -646,8 +841,8 @@
     <input class="visually-hidden" type="file" id="csvFileInput" accept=".db,.csv,text/csv,text/plain">
   </label>
 
-  <p class="status" id="status" role="status" aria-live="polite">
-    Waiting for <code>cfp.db</code>…
+  <p class="status" id="status" role="status" aria-live="polite" data-kind="busy">
+    <span id="statusText">Waiting for <code>cfp.db</code></span>
   </p>
 
   <section class="card">
@@ -881,8 +1076,11 @@
 
   /* ------------------------------------------------------------- UI bits */
   function setStatus(message, kind) {
+    /* The message lives in its own span: the status bar is a flex row, and a bare string of
+       inline markup would turn every text run into a separate item (spaced by the row's gap,
+       and unable to wrap). */
+    document.getElementById('statusText').innerHTML = message;
     var el = document.getElementById('status');
-    el.innerHTML = message;
     if (kind) {
       el.setAttribute('data-kind', kind);
     } else {
@@ -926,7 +1124,7 @@
     });
 
     if (!usable.length) {
-      setStatus('No usable rows found in <code>' + esc(label) + '</code>. ' +
+      setStatus('<code>' + esc(label) + '</code> holds no usable rows. ' +
         'Expected the comma-separated export with a header row.', 'error');
       return;
     }
@@ -946,7 +1144,7 @@
 
     setStatus('Loaded <strong>' + usable.length.toLocaleString() + '</strong> ' +
       (usable.length === 1 ? 'entry' : 'entries') +
-      ' from <code>' + esc(label) + '</code>.');
+      ' from <code>' + esc(label) + '</code>');
   }
 
   function parseFile(file) {
@@ -955,14 +1153,15 @@
       return;
     }
 
-    setStatus('Reading <code>' + esc(file.name) + '</code>…');
+    setStatus('Reading <code>' + esc(file.name) + '</code>', 'busy');
 
     Papa.parse(file, Object.assign({}, PARSE_OPTS, {
       complete: function (results) {
         ingest(results.data || [], file.name);
       },
       error: function (err) {
-        setStatus('Could not read <code>' + esc(file.name) + '</code>: ' + esc(err && err.message || err), 'error');
+        setStatus('Reading <code>' + esc(file.name) + '</code> failed: ' +
+          esc(err && err.message || err), 'error');
       }
     }));
   }
@@ -1070,7 +1269,7 @@
       return;
     }
 
-    setStatus('Looking for <code>cfp.db</code>…');
+    setStatus('Looking for <code>cfp.db</code>', 'busy');
     Papa.parse('cfp.db', Object.assign({}, PARSE_OPTS, {
       download: true,
       complete: function (results) {
