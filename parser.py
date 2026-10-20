@@ -44,8 +44,7 @@ class DeserializeValueProcessor(Enum):
     MEDIA_TYPE = lambda x: MediaType.from_value(x) if x else MediaType.UNKNOWN
     MEDIA_NAME = lambda x: x
     MEDIA_TITLE = lambda x: x
-    MEDIA_DEADLINE = lambda x: datetime.strptime(
-        x, METADATA["DATA_CONTAINER"]['MEDIA_DEADLINE_FORMAT'] or DEFAULT_MEDIA_DEADLINE_FORMAT) if x else None
+    MEDIA_DEADLINE = lambda x: datetime.strptime(x, DEFAULT_MEDIA_DEADLINE_FORMAT) if x else None
     MEDIA_TITLE_LINK = lambda x: x
     MEDIA_TITLE_TEXT = lambda x: x.text.strip() if x and x.text else None
     MEDIA_SUMMARY = lambda x: remove_non_printable_chars(x.text.strip()) if x and x.text else None
@@ -68,16 +67,6 @@ METADATA = {
         "Sec-Fetch-Mode": "navigate",
         "Sec-Fetch-Site": "none",
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Safari/605.1.15"
-    },
-    "DATA_CONTAINER": {
-        "CLASS_NAME": "cfp-card",
-        "TITLE_CLASS_NAME": None,
-        "SUMMARY_CLASS_NAME": "line-clamp-3",
-        "ACTION_CLASS_NAME": None,
-        "MEDIA_TYPE": None,
-        "MEDIA_NAME": None,
-        "MEDIA_DEADLINE": None,
-        "MEDIA_DEADLINE_FORMAT": None,
     },
     "DB_HEADER": [TYPE_FIELD_NAME, NAME_FIELD_NAME, TITLE_FIELD_NAME, "Summary", DEADLINE_FIELD_NAME, "TitleLink",
                   "ActionsLink"],
@@ -249,7 +238,6 @@ def update_db_info(records: dict[DbRecordStatus, list[dict[str, Any]]]) -> None:
         field_names = METADATA["DB_HEADER"]
         delimiter = METADATA["DB_FIELDS_DELIMITER"]
         db_record_status = METADATA["DB_RECORDS_ORDER"]
-        container_metadata = METADATA["DATA_CONTAINER"]
         with open(db_file_location, "w", encoding=encoding) as csvfile:
             # It works correctly.
             # noinspection PyTypeChecker
@@ -261,10 +249,8 @@ def update_db_info(records: dict[DbRecordStatus, list[dict[str, Any]]]) -> None:
                         record[DEADLINE_FIELD_NAME] is None, record[DEADLINE_FIELD_NAME]))
                     for cfp_record in ordered_records:
                         if cfp_record[DEADLINE_FIELD_NAME]:
-                            deadline_format = container_metadata.get(
-                                'MEDIA_DEADLINE_FORMAT') or DEFAULT_MEDIA_DEADLINE_FORMAT
                             cfp_record[DEADLINE_FIELD_NAME] = cfp_record[DEADLINE_FIELD_NAME].strftime(
-                                deadline_format)
+                                DEFAULT_MEDIA_DEADLINE_FORMAT)
                         writer.writerow(cfp_record)
                     print(
                         f"Processed {len(records[record_status])} row{"s" if len(records[record_status]) > 1 else ""} with {record_status} status")
