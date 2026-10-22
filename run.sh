@@ -28,7 +28,9 @@ else
     source "$VENV_NAME/bin/activate"
 fi
 
-echo "Running script '$SCRIPT_NAME' in '$VENV_NAME' virtual environment with '$PYTHON' command"
+PYTHON_VERSION="$("$PYTHON" --version)"
+
+echo "Running script '$SCRIPT_NAME' in '$VENV_NAME' virtual environment with '$PYTHON' command ($PYTHON_VERSION)"
 "$PYTHON" "$SCRIPT_NAME"
 echo "Deactivating virtual environment '$VENV_NAME'"
 deactivate
