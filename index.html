@@ -118,7 +118,7 @@
     --info-bg: #e8f1fd; --info-fg: #1d4ed8; --info-bd: #cfe0fb;
     --plum-bg: #f2ecfe; --plum-fg: #6d28d9; --plum-bd: #e2d6fb;
     --warn-bg: #fdf3e2; --warn-fg: #9a5b04; --warn-bd: #f6e3c3;
-    --danger-bg: #fdecec; --danger-fg: #b3261e; --danger-bd: #f7d3d1;
+    --danger-fg: #b3261e;
   }
 
   /* Dark palette. `data-theme` is resolved by the bootstrap script in <head>: it holds the saved
@@ -149,7 +149,7 @@
     --info-bg: #10203c; --info-fg: #8ab8ff; --info-bd: #1f3459;
     --plum-bg: #211a3c; --plum-fg: #c4b5fd; --plum-bd: #362a5e;
     --warn-bg: #2e2410; --warn-fg: #fbbf24; --warn-bd: #4a3a18;
-    --danger-bg: #33191a; --danger-fg: #fca5a5; --danger-bd: #542425;
+    --danger-fg: #fca5a5;
   }
 
   /* ------------------------------------------------------------------ base */
@@ -360,7 +360,6 @@
 
   .dropzone__title { display: block; margin: 0; font-weight: 600; }
   .dropzone__hint { display: block; margin: .15rem 0 0; color: var(--muted); font-size: .875rem; }
-  .dropzone__title code, .dropzone__hint code { background: var(--surface-2); }
 
   .dropzone__action {
     margin-left: auto;
@@ -437,18 +436,16 @@
 
   /* --------------------------------------------------------- datatables UI */
   #csvTable {
-    width: 100%;
     margin: 0;
     border-collapse: separate;
     border-spacing: 0;
   }
 
-  table.dataTable thead th,
-  table.dataTable thead td {
+  table.dataTable thead th {
     /* Intentionally NOT position:sticky. DataTables' own sheet sets `position: relative` on
-       sortable header cells (for its ::before/::after arrows) so only the columns it has no
-       rule for — Summary and Link — would end up pinned to the viewport. The header scrolls
-       away with the rows instead. */
+       sortable header cells (for its sort arrows) so only the columns it has no rule for —
+       Summary and Link — would end up pinned to the viewport. The header scrolls away with
+       the rows instead. */
     padding: .8rem 1rem;
     background: var(--thead);
     color: var(--muted);
@@ -459,8 +456,6 @@
     white-space: nowrap;
     border-bottom: 1px solid var(--border);
   }
-
-  table.dataTable tbody tr { background-color: transparent !important; }
 
   table.dataTable tbody td {
     padding: .9rem 1rem;
@@ -557,39 +552,7 @@
 
   .chip-link:hover { border-color: var(--accent); }
 
-  /* sorting arrows */
-  /* DataTables draws its own Unicode ▲/▼ pseudo arrows on sortable headers; drop them so the
-     background-image arrows below are the only ones shown. */
-  table.dataTable thead > tr > th:before,
-  table.dataTable thead > tr > th:after {
-    content: none !important;
-  }
-
-  table.dataTable thead > tr > th.sorting,
-  table.dataTable thead > tr > th.sorting_asc,
-  table.dataTable thead > tr > th.sorting_desc,
-  table.dataTable thead > tr > th.sorting_asc_disabled,
-  table.dataTable thead > tr > th.sorting_desc_disabled {
-    padding-right: 1.9rem;
-    background-repeat: no-repeat;
-    background-position: right .65rem center;
-    background-size: 11px 15px;
-    cursor: pointer;
-  }
-
-  table.dataTable thead > tr > th.sorting,
-  table.dataTable thead > tr > th.sorting_asc_disabled,
-  table.dataTable thead > tr > th.sorting_desc_disabled {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='11' height='15' viewBox='0 0 11 15'><path d='M5.5 0 10 6H1z' fill='%2394a3b8'/><path d='M5.5 15 10 9H1z' fill='%2394a3b8'/></svg>");
-  }
-
-  table.dataTable thead > tr > th.sorting_asc {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='11' height='15' viewBox='0 0 11 15'><path d='M5.5 0 10 6H1z' fill='%233b82f6'/><path d='M5.5 15 10 9H1z' fill='%23cbd5e1'/></svg>");
-  }
-
-  table.dataTable thead > tr > th.sorting_desc {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='11' height='15' viewBox='0 0 11 15'><path d='M5.5 0 10 6H1z' fill='%23cbd5e1'/><path d='M5.5 15 10 9H1z' fill='%233b82f6'/></svg>");
-  }
+  /* sort arrows are drawn by DataTables 3 itself (.dt-column-order::before/::after) */
 
   /* wrapper: toolbar + footer (DataTables 3 names the wrapper .dt-container and its controls
      .dt-length / .dt-search / .dt-info / .dt-paging) */
@@ -782,7 +745,7 @@
     </div>
 
     <div class="hero__aside">
-      <fieldset class="theme-switch" id="themeSwitch">
+      <fieldset class="theme-switch">
         <legend class="visually-hidden">Colour theme</legend>
 
         <label class="theme-switch__option" title="Follow the system theme">
@@ -849,7 +812,7 @@
   </p>
 
   <section class="card">
-    <div class="filters" id="filterWrap">
+    <div id="filterWrap">
       <label class="visually-hidden" for="typeFilter">Filter by type</label>
       <select id="typeFilter" class="filter-select">
         <option value="">All types</option>
@@ -878,8 +841,11 @@
 
   <footer class="foot">
     Parsed from
+    <a href="https://www.computer.org/"
+       target="_blank" rel="noopener noreferrer">computer.org</a>
+     · 
     <a href="https://www.computer.org/publications/author-resources/calls-for-papers"
-       target="_blank" rel="noopener noreferrer">computer.org · Calls for Papers</a>
+       target="_blank" rel="noopener noreferrer">Calls for Papers</a>
   </footer>
 </div>
 
@@ -1039,7 +1005,6 @@
   var COLUMNS = [
     {
       data: 'Type',
-      className: 'cell-type',
       width: '118px',
       render: function (data, type) {
         return type === 'display' ? renderType(data) : (data == null ? '' : String(data));
