@@ -110,7 +110,8 @@ you need a historical snapshot.
 
 ## Viewer (`index.html`)
 
-A single self-contained page (jQuery + DataTables 1.13.4 + PapaParse from CDNs).
+A single self-contained page (jQuery 4.0.0 + DataTables 3.1.4 + PapaParse 5.7.0 from CDNs; jQuery
+must load before DataTables).
 
 Features:
 

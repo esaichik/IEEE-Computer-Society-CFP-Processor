@@ -182,9 +182,9 @@ Single self-contained file. No bundler, transpiler, or local asset pipeline.
 
 External CDN dependencies (do not change versions casually):
 
-- jQuery 3.6.1
-- DataTables 1.13.4 (CSS + JS)
-- PapaParse 5.4.1
+- jQuery 4.0.0 (must load **before** DataTables)
+- DataTables 3.1.4 (CSS + JS; `$.fn.dataTable` only exists if jQuery was already loaded)
+- PapaParse 5.7.0
 
 Page structure:
 
@@ -228,9 +228,14 @@ Frontend conventions:
 - Do not add build steps, frameworks, or local font/image dependencies.
 - Preserve accessibility: visually hidden labels, focus-visible rings, `aria-live` status,
   keyboard-operable controls, and reduced-motion handling.
-- DataTables 1.x quirks are intentional and documented in comments (sorting arrows are custom SVG,
-  header is not sticky, the search input is patched for placeholder/aria-label, the DOM layout is
-  custom). Do not “fix” them without understanding the comments.
+- DataTables 3 quirks are intentional and documented in comments (native sort arrows, header is not
+  sticky, the search input is patched for placeholder/aria-label, the DOM layout is custom). Its
+  CSS/markup uses `.dt-container` plus `.dt-length`, `.dt-search`, `.dt-info`, `.dt-paging` and
+  `.dt-paging-button`; the old 1.x names (`dataTables_wrapper`, `paginate_button`, …) no longer
+  match. Do not “fix” them without understanding the comments.
+- The script order is load-bearing: jQuery first, then DataTables, then PapaParse. Loading
+  DataTables first leaves `jQuery.fn.dataTable` undefined and the whole page script aborts, so
+  `cfp.db` never loads.
 - Keep `index.html` resilient to a missing/empty `cfp.db`: it must show the drop prompt rather than
   throw.
 

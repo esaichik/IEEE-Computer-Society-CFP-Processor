@@ -83,10 +83,12 @@
   Standalone page: no build step, no bundler, no transpilation.
   Everything (markup, styles, logic) lives in this one file; third-party libraries come from the CDNs below.
 -->
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
-<script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.js"></script>
+<link href="https://cdn.datatables.net/v/dt/dt-3.1.4/datatables.min.css" rel="stylesheet">
+<!-- jQuery must come first: DataTables 3.x no longer bundles it and only attaches $.fn.dataTable
+     when jQuery is already present on the page. -->
+<script src="https://code.jquery.com/jquery-4.0.0.min.js" integrity="sha256-OaVG6prZf4v69dPg6PhVattBXkcOWQB62pdZ3ORyrao=" crossorigin="anonymous"></script>
+<script src="https://cdn.datatables.net/v/dt/dt-3.1.4/datatables.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.7.0/papaparse.min.js" integrity="sha512-wyNDcNr/iqpMDH6ud/BVoy2SoWXnBZ6Bnq3kZa5XXYq7HZ4l8/ECCZkauMv5HDScNBYSl99P1fkiNOo74zig1Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <style>
   /* ---------------------------------------------------------------- tokens */
@@ -589,9 +591,10 @@
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='11' height='15' viewBox='0 0 11 15'><path d='M5.5 0 10 6H1z' fill='%23cbd5e1'/><path d='M5.5 15 10 9H1z' fill='%233b82f6'/></svg>");
   }
 
-  /* wrapper: toolbar + footer */
-  .dataTables_wrapper .dt-top,
-  .dataTables_wrapper .dt-bottom {
+  /* wrapper: toolbar + footer (DataTables 3 names the wrapper .dt-container and its controls
+     .dt-length / .dt-search / .dt-info / .dt-paging) */
+  .dt-container .dt-top,
+  .dt-container .dt-bottom {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -599,20 +602,20 @@
     padding: .75rem .85rem;
   }
 
-  .dataTables_wrapper .dt-bottom { border-top: 1px solid var(--border); padding-bottom: .85rem; }
+  .dt-container .dt-bottom { border-top: 1px solid var(--border); padding-bottom: .85rem; }
 
-  .dataTables_wrapper .dt-top .dataTables_length,
-  .dataTables_wrapper .dt-top .dataTables_filter,
-  .dataTables_wrapper .dt-bottom .dataTables_info,
-  .dataTables_wrapper .dt-bottom .dataTables_paginate {
+  .dt-container .dt-top .dt-length,
+  .dt-container .dt-top .dt-search,
+  .dt-container .dt-bottom .dt-info,
+  .dt-container .dt-bottom .dt-paging {
     float: none;
     margin: 0;
     padding: 0;
   }
 
-  .dataTables_wrapper .dt-top .dataTables_filter { margin-left: auto; }
-  .dataTables_wrapper .dt-bottom .dataTables_info { color: var(--muted); font-size: .8125rem; }
-  .dataTables_wrapper .dt-bottom .dataTables_paginate { margin-left: auto; }
+  .dt-container .dt-top .dt-search { margin-left: auto; }
+  .dt-container .dt-bottom .dt-info { color: var(--muted); font-size: .8125rem; }
+  .dt-container .dt-bottom .dt-paging { margin-left: auto; }
 
   #filterWrap { display: flex; align-items: center; gap: .6rem; }
 
@@ -631,7 +634,7 @@
     -webkit-appearance: none;
   }
 
-  .dataTables_wrapper .dataTables_length select {
+  .dt-container .dt-length select {
     padding: .45rem 2rem .45rem .7rem;
     font: inherit;
     font-size: .8125rem;
@@ -646,7 +649,7 @@
     -webkit-appearance: none;
   }
 
-  .dataTables_wrapper .dataTables_filter input {
+  .dt-container .dt-search input {
     width: 16rem;
     max-width: 100%;
     margin: 0 0 0 .4rem;
@@ -660,8 +663,8 @@
   }
 
   .filter-select:focus,
-  .dataTables_wrapper .dataTables_length select:focus,
-  .dataTables_wrapper .dataTables_filter input:focus {
+  .dt-container .dt-length select:focus,
+  .dt-container .dt-search input:focus {
     outline: none;
     border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--ring);
@@ -714,7 +717,7 @@
 
   .checkbox input:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
 
-  .dataTables_wrapper .dataTables_paginate .paginate_button {
+  .dt-container .dt-paging .dt-paging-button {
     min-width: 2.1rem;
     padding: .38rem .6rem;
     margin: 0 .08rem;
@@ -727,28 +730,28 @@
     box-shadow: none !important;
   }
 
-  .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+  .dt-container .dt-paging .dt-paging-button:hover {
     color: var(--text) !important;
     background: var(--hover) !important;
     border-color: var(--border) !important;
   }
 
-  .dataTables_wrapper .dataTables_paginate .paginate_button.current,
-  .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+  .dt-container .dt-paging .dt-paging-button.current,
+  .dt-container .dt-paging .dt-paging-button.current:hover {
     color: #fff !important;
     background: var(--accent) !important;
     border-color: var(--accent) !important;
   }
 
-  .dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
-  .dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover {
+  .dt-container .dt-paging .dt-paging-button.disabled,
+  .dt-container .dt-paging .dt-paging-button.disabled:hover {
     color: var(--faint) !important;
     background: transparent !important;
     border-color: transparent !important;
     cursor: default;
   }
 
-  table.dataTable td.dataTables_empty {
+  table.dataTable td.dt-empty {
     padding: 3rem 1rem;
     text-align: center;
     color: var(--faint);
@@ -759,8 +762,8 @@
     body { padding: 1.5rem .75rem 3rem; }
     .dropzone__action { display: none; }
     table.dataTable thead th, table.dataTable tbody td { padding: .7rem .75rem; }
-    .dataTables_wrapper .dataTables_filter input { width: 100%; margin-left: 0; }
-    .dataTables_wrapper .dt-top .dataTables_filter { margin-left: 0; flex: 1 1 100%; }
+    .dt-container .dt-search input { width: 100%; margin-left: 0; }
+    .dt-container .dt-top .dt-search { margin-left: 0; flex: 1 1 100%; }
   }
 </style>
 </head>
@@ -1191,8 +1194,10 @@
         }
       },
       initComplete: function () {
-        // DataTables 1.x has no placeholder option: set it on the generated input.
-        jQuery('.dataTables_filter input', this.api().table().container())
+        // DataTables 3 generates its own search box; make sure it is labelled and keeps the
+        // "search" input semantics (the placeholder itself comes from language.searchPlaceholder).
+        jQuery(this.api().table().container())
+          .find('.dt-search input')
           .attr('type', 'search')
           .attr('aria-label', 'Search calls for papers')
           .attr('placeholder', 'Search calls for papers…');
