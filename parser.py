@@ -139,7 +139,7 @@ def parse_ieee_cs_cfp_information(page_data: BeautifulSoup) -> dict[str, dict[st
                 media_type_str = type_name_text[:split_idx].strip()
                 name = type_name_text[split_idx + 1:].strip()
             else:
-                media_type_str = ""
+                media_type_str = type_name_text
                 name = None
             media_type = DeserializeValueProcessor.MEDIA_TYPE(media_type_str)
             title_link_element = container.find("a")
