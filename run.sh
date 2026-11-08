@@ -5,7 +5,7 @@ set -euo pipefail
 # Work from the project directory so relative paths are always valid.
 cd "$(dirname "$0")"
 
-VENV_NAME="${1:-parser}"
+VENV_NAME="${1:-venv}"
 SCRIPT_NAME="${2:-parser.py}"
 
 if command -v python >/dev/null 2>&1; then

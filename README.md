@@ -22,14 +22,14 @@ diffs the result against the previously stored `cfp.db`, and writes the refreshe
 
 1. Moves into the project directory (`cd "$(dirname "$0")"`).
 2. Uses `python` when available, otherwise `python3`.
-3. Creates the venv (`parser` by default) and installs `requirements.txt` on first run.
+3. Creates the venv (`venv` by default) and installs `requirements.txt` on first run.
 4. Activates the venv, prints the interpreter version, runs the script and deactivates.
 
 Manual equivalent:
 
 ```bash
-python3 -m venv parser
-source parser/bin/activate
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 python parser.py
 ```
