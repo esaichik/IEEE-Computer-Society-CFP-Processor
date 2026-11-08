@@ -24,8 +24,8 @@ computer.org CFP page
 
 1. Read `README.md` for the user-facing description.
 2. Run `git status` before editing. Treat modified/untracked files as user work.
-3. Inspect `parser.py`, `run.sh`, `requirements.txt` and the relevant part of `index.html` before
-   changing behavior.
+3. Inspect `parser.py`, `run.sh`, `pyproject.toml`, `uv.lock` and the relevant part of `index.html`
+   before changing behavior.
 4. Prefer the smallest change that solves the task; keep the existing style and structure.
 5. Validate with the checks in section 10 and report what was and was not run.
 
@@ -37,33 +37,36 @@ confirm with the user; `cfp.db` is real user data (and is git-ignored, so Git ca
 
 | Item | Value |
 | --- | --- |
-| Python | 3.12+ required; `.python-version` pins `3.15.0` |
-| Virtualenv | `parser/` by default (git-ignored) |
+| Python | 3.15.2 required (`requires-python` in `pyproject.toml`); `.python-version` pins `3.15.2` |
+| Package manager | `uv` (required; `run.sh` exits with an error if it is missing) |
+| Virtualenv | `.venv/` (created and synced by `uv`, git-ignored) |
 | Shell entry point | `run.sh` |
 | Parser entry point | `parser.py` |
 | Dataset | `cfp.db` (git-ignored) |
 | Viewer | `index.html` (open directly or serve over HTTP) |
 
-Why Python 3.12+: the parser uses `StrEnum` (3.11+) and PEP 701 nested same-quote f-strings such as
-`f"row{"s" if n > 1 else ""}"` (3.12+). Do not lower the requirement without rewriting those.
+The parser code needs Python 3.12+ (`StrEnum` from 3.11 and PEP 701 nested same-quote f-strings such
+as `f"row{"s" if n > 1 else ""}"` from 3.12), but the project metadata requires **3.15.2+**. Keep
+`.python-version`, `requires-python` and `uv.lock` in agreement; do not lower the requirement without
+rewriting those language features.
 
 Run the parser:
 
 ```bash
-./run.sh                 # venv "parser", script "parser.py"
-./run.sh myenv parser.py # custom venv and script
+./run.sh                # runs parser.py through uv
+./run.sh my_script.py   # runs another script through uv
 ```
 
 `run.sh` behavior:
 
 1. `cd "$(dirname "$0")"` so relative paths are valid.
-2. Prefers `python`, falls back to `python3`.
-3. Creates the venv and installs `requirements.txt` only when `$VENV_NAME/bin/activate` is missing.
-4. Activates the venv, prints the Python version, runs the script, deactivates.
-5. Uses `set -euo pipefail`; a failing parser exits non-zero.
+2. Checks that `uv` is on `PATH`; prints an error and exits 1 otherwise.
+3. Takes an optional script name (`${1:-parser.py}`) and runs `uv run "$SCRIPT_NAME"`, which creates
+   or syncs `.venv` from `pyproject.toml`/`uv.lock` as needed.
+4. Uses `set -euo pipefail`; a failing parser exits non-zero.
 
-Dependencies are installed only on first creation. After editing `requirements.txt`, either recreate
-the venv or run `pip install -r requirements.txt` inside it.
+Dependencies are declared with exact pins in `pyproject.toml` and locked in `uv.lock`. After editing
+them, run `uv lock` (or `uv sync`); do not edit `uv.lock` by hand. There is no `requirements.txt`.
 
 Serve the viewer:
 
@@ -80,15 +83,16 @@ When served over HTTP(S), `index.html` auto-loads `cfp.db` from the same directo
 | Path | Role |
 | --- | --- |
 | `parser.py` | Scraper, HTML parser, diff engine, CSV reader/writer. |
-| `run.sh` | Venv bootstrap and runner. |
-| `requirements.txt` | Pinned Python dependencies. |
+| `run.sh` | `uv` bootstrap check and runner. |
+| `pyproject.toml` | Project metadata and exact dependency pins (`requires-python = ">=3.15.2"`). |
+| `uv.lock` | uv lockfile: resolved versions and hashes; generated, do not edit manually. |
 | `index.html` | Standalone viewer: markup, CSS and JS in one file. |
 | `cfp.db` | Generated CSV dataset (git-ignored). |
-| `parser/` | Local virtualenv (git-ignored). |
+| `.venv/` | uv-managed virtualenv (git-ignored). |
 | `README.md` | User documentation; keep it in sync with behavior changes. |
 | `LICENSE` | License text. |
-| `.python-version` | `3.15.0`. |
-| `.gitignore` | Ignores `**/.DS_Store`, `/parser`, `.idea/`, `cfp.db`, `/__pycache__/`. |
+| `.python-version` | `3.15.2`. |
+| `.gitignore` | Ignores `.DS_Store`, `.venv/`, `.idea/`, `cfp.db`, `/__pycache__/`. |
 
 Approximate sizes at the time of writing: `parser.py` 285 lines, `index.html` 1294 lines,
 `cfp.db` 138 data rows.
@@ -300,7 +304,9 @@ truncated by the source and can end with `&hellip;`.
 - `main()` assumes both parse and match return dictionaries.
 - The parser's request is unauthenticated and subject to the site's availability/rate limits.
 - No automated tests, linter, formatter, type checker or CI exists. Do not claim they passed.
-- `cfp.db` and `parser/` are git-ignored; `.DS_Store` and `.idea/` are also ignored.
+- `cfp.db` and `.venv/` are git-ignored; `.DS_Store` and `.idea/` are also ignored.
+- `uv.lock` must stay in sync with `pyproject.toml`; run `uv lock` after changing dependencies and
+  commit the resulting lockfile.
 - The README snapshot becomes stale after each parser run. Update it only when the change is
   intentional and the user wants current numbers.
 
@@ -316,8 +322,8 @@ Python:
   `try_extract_name_from_title`, `create_composite_key`).
 - Match the existing 4-space indentation and 120-column-ish line style; there is no formatter
   config, so do not reformat unrelated lines.
-- Do not add dependencies for trivial tasks; update `requirements.txt` with exact pins if a new
-  dependency is genuinely required.
+- Do not add dependencies for trivial tasks; if a new dependency is genuinely required, add an exact
+  pin to `pyproject.toml` and run `uv lock` to update `uv.lock`.
 
 `index.html`:
 
@@ -342,7 +348,11 @@ Syntax and static checks:
 ```bash
 python3 -m py_compile parser.py
 bash -n run.sh
+uv lock --check
 ```
+
+`uv lock --check` verifies that `uv.lock` is in sync with `pyproject.toml` without changing the
+environment.
 
 CSV integrity (does not modify the file):
 
@@ -382,14 +392,14 @@ Before finishing a task:
 - [ ] Both light and dark palettes still work for UI changes.
 - [ ] Untrusted values are escaped and URLs validated.
 - [ ] `README.md`/`AGENTS.md` updated if behavior or setup changed.
-- [ ] No generated or ignored files (`cfp.db`, `parser/`, `.DS_Store`, `__pycache__`) are staged.
+- [ ] No generated or ignored files (`cfp.db`, `.venv/`, `.DS_Store`, `__pycache__`) are staged.
 - [ ] Validation results and any skipped checks are reported to the user.
 
 ## 12. Git and safety
 
 - Do not delete or overwrite `cfp.db` unless the task requires it; it is ignored and may be the only
   copy. Back it up before a destructive experiment.
-- Do not commit `parser/`, `cfp.db`, `.DS_Store`, `.idea/` or `__pycache__/`.
+- Do not commit `.venv/`, `cfp.db`, `.DS_Store`, `.idea/` or `__pycache__/`.
 - Do not rewrite Git history, force-push, or change remotes without explicit instruction.
 - Treat unexpected modifications as the user's work; inspect before reverting.
 - No secrets are stored in the repository; do not add any.
