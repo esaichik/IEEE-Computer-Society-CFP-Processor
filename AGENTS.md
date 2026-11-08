@@ -50,20 +50,24 @@ as `f"row{"s" if n > 1 else ""}"` from 3.12), but the project metadata requires 
 `.python-version`, `requires-python` and `uv.lock` in agreement; do not lower the requirement without
 rewriting those language features.
 
-Run the parser:
+Run the parser and serve the viewer:
 
 ```bash
-./run.sh                # runs parser.py through uv
-./run.sh my_script.py   # runs another script through uv
+./run.sh                    # runs parser.py, then serves http://127.0.0.1:3000/
+./run.sh 127.0.0.1 8080     # same, on a custom host/port
+./run.sh 0.0.0.0            # custom host, default port 3000
 ```
 
 `run.sh` behavior:
 
 1. `cd "$(dirname "$0")"` so relative paths are valid.
-2. Checks that `uv` is on `PATH`; prints an error and exits 1 otherwise.
-3. Takes an optional script name (`${1:-parser.py}`) and runs `uv run "$SCRIPT_NAME"`, which creates
-   or syncs `.venv` from `pyproject.toml`/`uv.lock` as needed.
-4. Uses `set -euo pipefail`; a failing parser exits non-zero.
+2. Reads `HOST` from `$1` (default `127.0.0.1`) and `PORT` from `$2` (default `3000`).
+3. Checks that `uv` is on `PATH`; prints an error and exits 1 otherwise.
+4. Runs `uv run parser.py`, which creates or syncs `.venv` from `pyproject.toml`/`uv.lock` and
+   refreshes `cfp.db`.
+5. After the parser succeeds, starts `uv run python -m http.server "$PORT" --bind "$HOST"`,
+   serving the repository root so `index.html` and `cfp.db` are available over HTTP.
+6. Uses `set -euo pipefail`; a failing parser or server exits non-zero.
 
 Dependencies are declared with exact pins in `pyproject.toml` and locked in `uv.lock`. After editing
 them, run `uv lock` (or `uv sync`); do not edit `uv.lock` by hand. There is no `requirements.txt`.
@@ -71,8 +75,11 @@ them, run `uv lock` (or `uv sync`); do not edit `uv.lock` by hand. There is no `
 Serve the viewer:
 
 ```bash
-python3 -m http.server 8000
-# http://localhost:8000/index.html
+./run.sh
+# parser refresh finishes, then http://127.0.0.1:3000/
+
+./run.sh 127.0.0.1 8080
+# parser refresh finishes, then http://127.0.0.1:8080/
 ```
 
 When served over HTTP(S), `index.html` auto-loads `cfp.db` from the same directory. When opened via
@@ -83,7 +90,7 @@ When served over HTTP(S), `index.html` auto-loads `cfp.db` from the same directo
 | Path | Role |
 | --- | --- |
 | `parser.py` | Scraper, HTML parser, diff engine, CSV reader/writer. |
-| `run.sh` | `uv` bootstrap check and runner. |
+| `run.sh` | `uv` bootstrap check; runs the parser, then serves the viewer on a configurable host/port (default `127.0.0.1:3000`). |
 | `pyproject.toml` | Project metadata and exact dependency pins (`requires-python = ">=3.15.2"`). |
 | `uv.lock` | uv lockfile: resolved versions and hashes; generated, do not edit manually. |
 | `index.html` | Standalone viewer: markup, CSS and JS in one file. |
@@ -370,13 +377,13 @@ PY
 Parser smoke test (network + rewrites `cfp.db`; only with permission):
 
 ```bash
-./run.sh
+uv run parser.py
 ```
 
-Viewer check:
+Viewer check (runs the parser first, then serves; stop with Ctrl-C):
 
 ```bash
-python3 -m http.server 8000
+./run.sh
 ```
 
 Then verify in a browser: the table loads `cfp.db`, stats populate, type filter counts are correct,
