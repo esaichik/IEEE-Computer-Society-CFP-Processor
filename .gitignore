@@ -1,8 +1,4 @@
-.DS_Store
-
-# venv-name
-.venv/
-
 .idea/
 cfp.db
-/__pycache__/
+__pycache__/
+
